@@ -322,160 +322,75 @@ void play2048()
         cin >> rounds;
         // We are going to make 4 NN each with 2 hidden layer and 1 final output layer
         int gamma = 0.95;
-        // Left 0
-        neuron h1_left(16, 0.01);
-        neuron h2_left(16, 0.01);
-        neuron y_left(2, 0.01);
-        // Right 1
-        neuron h1_right(16, 0.01);
-        neuron h2_right(16, 0.01);
-        neuron y_right(2, 0.01);
-        // up 2
-        neuron h1_up(16, 0.01);
-        neuron h2_up(16, 0.01);
-        neuron y_up(2, 0.01);
-        // Down 3
-        neuron h1_down(16, 0.01);
-        neuron h2_down(16, 0.01);
-        neuron y_down(2, 0.01);
+        /*Design: 256 input 16x16 each of the first 16 is paired with log2 of the tile index as 1
+            and then after that first layer is going to be 512 neuron each with 256 input
+            then after that we have 256 neuron with 512 input and finally layer with 4 neuron 256 input 
+        */
+        vector<neuron> h1(512,neuron(256,0.001f));
+        vector<neuron> h2(256,neuron(512,0.001f));
+        vector<neuron> finale(4,neuron(256,0.001f));
 
         for (int i = 0; i < rounds; i++)
         {
             int choice = 0;
             bool first = true;
             float reward = 0;
-            float prevScore = 0;
-            float prevh1 = 0;
-            float prevh2 = 0;
+            bool stuck = false;
+            current_free = 16;
+            maxTile = 2;
             while (true)
             {
+                CLEAR_SCREEN
+                printBoard();
                 if (isDead())
                 { // aka if it is 0 it will return true
                     delay(1000);
                     cout << "輸了！" << "\n";
                     delay(1000);
-                    break;
+                    init();
+                    spawn();
                 }
-                CLEAR_SCREEN
-                printBoard();
-                vector<float> state_for_h1;
-                vector<float> state_for_h2;
-                for (int j = 0; j < 4; j++)
-                {
-                    for (int k = 0; k < 4; k++)
-                    {
-                        state_for_h1.push_back((float)board[j][k]);
-                        state_for_h2.push_back((float)board[k][j]);
+                vector<float> input(256,0);
+                for (int i = 0; i<4; i++) {
+                    for (int j = 0; j<4; j++) {
+                        int index = 0;
+                        if (board[i][j]) {
+                            index = log2(board[i][j]);
+                        }
+                        input[(i * 4 + j) * 16 + index] = 1;
                     }
-                }
-#define h1(x) h1_##x.setInput(state_for_h1)
-#define h2(x) h2_##x.setInput(state_for_h2)
-#define y(x) y_##x.setInput({h1_##x.y_hat(false), h2_##x.y_hat(true)})
-                h1(left);
-                h2(left);
-                y(left);
-                h1(right);
-                h2(right);
-                y(right);
-                h1(up);
-                h2(up);
-                y(up);
-                h1(down);
-                h2(down);
-                y(down);
-                float leftScore = y_left.y_hat(false);
-                float rightScore = y_right.y_hat(false);
-                float upScore = y_up.y_hat(false);
-                float downScore = y_down.y_hat(false);
-                if (!first)
-                {
-#define TRAIN1(x) y_##x.train(2 * (prevScore - target))
-#define TRAIN2(x) h1_##x.train(2 * (prevScore - target) * prevh1)
-#define TRAIN3(x) h2_##x.train(2 * (prevScore - target) * prevh2)
 
-                    if (choice == 0)
-                    {
-                        float target = reward + gamma * leftScore;
-                        TRAIN1(left);
-                        TRAIN2(left);
-                        TRAIN3(left);
-                        h1(left);
-                        h2(left);
-                        y(left);
-                        leftScore = y_left.y_hat(false);
-                    }
-                    else if (choice == 1)
-                    {
-                        float target = reward + gamma * rightScore;
-                        TRAIN1(right);
-                        TRAIN2(right);
-                        TRAIN3(right);
-                        h1(right);
-                        h2(right);
-                        y(right);
-                        rightScore = y_right.y_hat(false);
-                    }
-                    else if (choice == 2)
-                    {
-                        float target = reward + gamma * upScore;
-                        TRAIN1(up);
-                        TRAIN2(up);
-                        TRAIN3(up);
-                        h1(up);
-                        h2(up);
-                        y(up);
-                        upScore = y_up.y_hat(false);
-                    }
-                    else if (choice == 3)
-                    {
-                        float target = reward + gamma * downScore;
-                        TRAIN1(down);
-                        TRAIN2(down);
-                        TRAIN3(down);
-                        h1(down);
-                        h2(down);
-                        y(down);
-                        downScore = y_down.y_hat(false);
-                    }
                 }
-                else
-                {
-                    first = false;
+                vector<float>h1_out(512);
+                for (int i = 0; i<512; i++) {
+                    h1[i].setInput(input);
+                    h1_out[i] = h1[i].y_hat(true);
                 }
-                reward = 0;
+                vector<float>h2_out(256);
+                for (int i = 0; i<256; i++) {
+                    h2[i].setInput(h1_out);
+                    h2_out[i] = h2[i].y_hat(true);
+                }
+                vector<float>q_out(4);
+                for (int i = 0; i<4; i++) {
+                    finale[i].setInput(h2_out);
+                    q_out[i]=finale[i].y_hat(false);
+                }
                 int before[4][4];
                 copy(&board[0][0], &board[0][0] + 16, &before[0][0]);
-                if (downScore > upScore && downScore > leftScore && downScore > rightScore)
-                {
-                    down();
-                    prevScore = downScore;
-                    prevh1 = h1_down.y_hat(false);
-                    prevh2 = h2_down.y_hat(true);
-                    choice = 3;
+                if (stuck || randint(1, 100) <= 10) { 
+                    choice = randint(0, 3); // Force a random move to break the freeze
+                } else {
+                    choice = distance(q_out.begin(), max_element(q_out.begin(), q_out.end()));
                 }
-                else if (upScore > downScore && upScore > leftScore && upScore > rightScore)
-                {
+                if (choice == 0) {
                     up();
-                    prevScore = upScore;
-                    prevh1 = h1_up.y_hat(false);
-                    prevh2 = h2_up.y_hat(true);
-                    choice = 2;
-                }
-                else if (leftScore > upScore && leftScore > downScore && leftScore > rightScore)
-                {
+                } else if (choice == 1) {
+                    down();
+                } else if (choice == 2) {
                     left();
-                    prevScore = leftScore;
-                    prevh1 = h1_left.y_hat(false);
-                    prevh2 = h2_left.y_hat(true);
-                    choice = 0;
-                }
-                else if (rightScore > upScore && rightScore > leftScore && rightScore > downScore)
-                {
+                } else if (choice == 3) {
                     right();
-                    prevScore = rightScore;
-                    prevh1 = h1_right.y_hat(false);
-                    prevh2 = h2_right.y_hat(true);
-                    choice = 1;
                 }
                 if (isDead())
                 {
@@ -485,10 +400,69 @@ void play2048()
                 if (!equal(&board[0][0], &board[0][0] + 16, &before[0][0]))
                 {
                     spawn();
+                    stuck = false; 
                 } else {
                     reward = -100;
+                    stuck = true;
                 }
                 get_score = 0;
+                //This is not a duplicate! I am making the training here!
+                vector<float> inputp(256,0);
+                for (int i = 0; i<4; i++) {
+                    for (int j = 0; j<4; j++) {
+                        int index = 0;
+                        if (board[i][j]) {
+                            index = log2(board[i][j]);
+                        }
+                        inputp[(i * 4 + j) * 16 + index] = 1;
+                    }
+
+                }
+                vector<float>h1_outp(512);
+                for (int i = 0; i<512; i++) {
+                    h1[i].setInput(inputp);
+                    h1_outp[i] = h1[i].y_hat(true);
+                }
+                vector<float>h2_outp(256);
+                for (int i = 0; i<256; i++) {
+                    h2[i].setInput(h1_outp);
+                    h2_outp[i] = h2[i].y_hat(true);
+                }
+                vector<float>q_outp(4);
+                for (int i = 0; i<4; i++) {
+                    finale[i].setInput(h2_outp);
+                    q_outp[i]=finale[i].y_hat(false);
+                }
+                float target = (float)reward + (gamma * (*max_element(q_outp.begin(), q_outp.end())));
+                
+                float grad_finale = (q_out[choice] - target) * 2;
+                finale[choice].train(grad_finale);
+
+                vector<float> finale_weights = finale[choice].get_weight();
+                vector<float> grad_h2(256, 0.0f);
+
+                for (int j = 0; j < 256; j++) {
+                    if (h2_out[j] > 0) {
+                        grad_h2[j] = grad_finale * finale_weights[j];
+                        h2[j].setInput(h1_out);
+                        h2[j].train(grad_h2[j]);
+                    }
+                }
+
+                for (int i = 0; i < 512; i++) {
+                    if (h1_out[i] > 0) {
+                        float grad_h1_i = 0.0f;
+                        for (int j = 0; j < 256; j++) {
+                            if (h2_out[j] > 0) {
+                                vector<float> h2_weights = h2[j].get_weight();
+                                grad_h1_i += grad_h2[j] * h2_weights[i];
+                            }
+                        }
+                        h1[i].setInput(input);
+                        h1[i].train(grad_h1_i);
+                    }
+                }
+                delay(50);
             }
         }
     }

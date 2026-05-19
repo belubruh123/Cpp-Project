@@ -36,6 +36,9 @@ public:
         }
         bias -= (lr*grad_before);
     }
+    vector<float> get_weight() {
+        return weights;
+    }
 };
 
 void start_nn_demo() {
