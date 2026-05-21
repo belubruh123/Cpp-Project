@@ -1,34 +1,31 @@
 @echo off
-setlocal
+cls
 
-:: 1. Check if g++ is installed and in the PATH
+:: 1. Check if g++ is installed
 where g++ >nul 2>nul
 if %errorlevel% neq 0 (
-    echo [ERROR] g++ compiler not found! 
-    echo Please install MinGW or add it to your System PATH.
-    pause
+    echo [ERROR] g++ compiler could not be found!
+    echo Please ensure MinGW or MSYS2 is installed and added to your System PATH.
     exit /b 1
 )
 
 :: 2. Start Build Process
 echo ========================================
-echo [INFO] Starting Windows Unity Build...
-echo [INFO] Compiling main.cpp...
+echo [INFO] Starting Windows Build...
+echo [INFO] Compiling main and sub-modules...
 echo ========================================
 
 :: 3. Compile and capture the result
-:: -Wall -Wextra turns on helpful warnings
-g++ main.cpp -o app.exe -Wall -Wextra
+g++ main.cpp 2048/2048.cpp NN/ai_tools.cpp -o app.exe -Wall -Wextra
 
-:: 4. Check if the compilation was successful
-if %errorlevel% equ 0 (
+:: 4. Check if compilation was successful
+if %errorlevel% eq 0 (
     echo.
     echo [SUCCESS] Build completed! Executable: app.exe
     echo.
     
-    :: Optional: Ask to run it immediately
-    set /p run="Run the app now? (Y/N): "
-    if /I "%run%"=="Y" (
+    set /p run_app="Run the app now? (y/n): "
+    if /i "%run_app%"=="y" (
         echo --- Running app.exe ---
         app.exe
     )
@@ -36,5 +33,5 @@ if %errorlevel% equ 0 (
     echo.
     echo [FATAL ERROR] Build failed. Check the compiler logs above.
     echo.
-    pause
+    exit /b 1
 )

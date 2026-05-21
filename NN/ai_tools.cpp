@@ -1,5 +1,4 @@
 #include <bits/stdc++.h>
-#pragma once
 using namespace std;
 extern int randint(int min, int max);
 extern void delay(int ms);
@@ -36,9 +35,12 @@ public:
         }
         bias -= (lr*grad_before);
     }
+    vector<float> get_weight() {
+        return weights;
+    }
 };
 
-void start_nn_demo() {
+inline void start_nn_demo() {
     //This is the demo for it, f(x) = 3x
     neuron my_demo(1,0.01);
     vector<float> trainData = {3,5,7,9,1,2,6};

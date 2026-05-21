@@ -1,8 +1,7 @@
-**
+
 
 ## **This project is going to be a code gallery platform. And I am planning to add the following games:**
 
-**
 
 ##BIG NOTICE! THE MAIN MENU IS SPECIALLY DESIGNED BY AI! I do code the class and thing but the design and the cursor handling is provided by AI (Gemini).
 
