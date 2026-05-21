@@ -281,6 +281,7 @@ void play2048()
     }
     if (!mode)
     {
+        int total_score = 0;
         while (true)
         {
             CLEAR_SCREEN
@@ -292,6 +293,7 @@ void play2048()
                 break;
             }
             printBoard();
+            cout << "\n Your Score:" << total_score;
             cout << endl
                  << "請選擇 (WASD 或 Q 離開)： ";
             char input = tolower(getch());
@@ -312,6 +314,8 @@ void play2048()
                 right();
             if (!equal(&board[0][0], &board[0][0] + 16, &before[0][0]))
                 spawn();
+            total_score += get_score;
+            get_score = 0;
         }
     }
     else
@@ -333,6 +337,7 @@ void play2048()
         for (int i = 0; i < rounds; i++)
         {
             int choice = 0;
+            int total_score = 0;
             bool first = true;
             float reward = 0;
             bool stuck = false;
@@ -405,6 +410,8 @@ void play2048()
                     reward = -100;
                     stuck = true;
                 }
+                total_score += get_score;
+                cout << "\n Score:" << total_score << endl;
                 get_score = 0;
                 //This is not a duplicate! I am making the training here!
                 vector<float> inputp(256,0);

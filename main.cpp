@@ -1,8 +1,8 @@
 #include <bits/stdc++.h>
 #include <functional>
-#include "2048/2048.cpp"
-#include "wordle/wordle.cpp"
+#include "2048/2048.hpp"
 #include "NN/ai_tools.cpp"
+#include "wordle/wordle.cpp"
 
 #ifdef _WIN32
     #include <windows.h>
