@@ -137,7 +137,7 @@ int main() {
     });
 
     menu.addOption("Wordle", []() {
-        cout << BOLD_WHITE << "[提示] Wordle 尚未完成。" << RESET << endl;
+        wordle();
     });
 
     menu.addOption("神經網路模型訓練 ", []() {
