@@ -6,6 +6,10 @@ using namespace std;
 #define WHT_TXT "\033[38;2;249;246;242m"
 #define RESET "\033[0m"
 
+#ifdef _WIN32
+    #include <conio.h>
+#endif
+
 extern int getch(); // Too lazy to make a header for main.cpp
 random_device rd;
 mt19937 gen(rd());
