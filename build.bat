@@ -19,37 +19,32 @@ if %errorlevel% neq 0 (
 )
 
 :: 2. Clean up previous build if it exists
-if exist app.exe (
-    echo [INFO] Removing old app.exe...
-    del app.exe
+if exist game.exe (
+    echo [INFO] Removing old game.exe...
+    del game.exe
 )
 
 :: 3. Start Compilation Process
-echo [INFO] Compiling modules with C++11 standard...
+echo [INFO] Compiling modules with C++17 standard...
 echo ---------------------------------------------------------
 
-g++ -std=c++11 ^
-    main.cpp ^
-    2048/2048.cpp ^
-    NN/ai_tools.cpp ^
-    wordle/wordle.cpp ^
-    -o app.exe ^
-    -Wall -Wextra
+:: Added your "shut up" flags here (-D_HAS_STD_BYTE=0 and -w)
+g++ -std=c++14 -w main.cpp wordle/wordle.cpp 2048/2048.cpp -o game.exe
 
 :: 4. Check if compilation succeeded
 if %errorlevel% equ 0 (
     echo ---------------------------------------------------------
     echo [SUCCESS] Build completed successfully! 
-    echo [OUTPUT] Executable generated: app.exe
+    echo [OUTPUT] Executable generated: game.exe
     echo.
     
     :: Ask user if they want to run the program immediately
     set /p run_app="Run the application now? (y/n): "
     if /i "%run_app%"=="y" (
         echo.
-        echo Launching app.exe...
+        echo Launching game.exe...
         echo ---------------------------------------------------------
-        app.exe
+        game.exe
     )
 ) else (
     color 0C
