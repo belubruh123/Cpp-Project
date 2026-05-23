@@ -9,13 +9,9 @@
 
  - 2048
  - Wordle
- - Backrooms (3D and I am planning to make it with Raylib)
-
 ## *Algorithm Showcase:*
 
  - Neuron Network Math training
- - A code that generate symbol between 1-n that is + and - and sums up to a number
- - A code that generates Pythagorean triples
  ***
 
 ## Advertising (of course I need to):
