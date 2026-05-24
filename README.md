@@ -24,14 +24,44 @@
 
 ***
 We have transitioned to using CMake for building this project. Please ensure you have CMake installed.
- 
- **To compile from source (All Platforms):**
-> mkdir build
-> cd build
-> cmake ..
-> make
 
-Once compiled, you can run the application:
-> ./app
+### **Windows**
+**Dependencies**:
+- CMake
+- MinGW-w64 (GCC/G++) installed and added to your system PATH
 
- 
+**To compile from source:**
+```bat
+mkdir build
+cd build
+cmake ..
+cmake --build .
+```
+
+**Running the app**:
+Make sure you run the app from the root project folder so it can locate the required data files (like the Wordle wordlist)!
+```bat
+cd ..
+build\app.exe
+```
+
+### **Linux / macOS**
+**Dependencies**:
+- CMake
+- GCC/G++ or Clang
+- Required system libraries for Raylib (on Linux: `libasound2-dev`, `libx11-dev`, `libxrandr-dev`, `libxi-dev`, `libgl1-mesa-dev`, `libglu1-mesa-dev`, `libxcursor-dev`, `libxinerama-dev`).
+
+**To compile from source:**
+```bash
+mkdir build
+cd build
+cmake ..
+make
+```
+
+**Running the app**:
+Make sure you run the app from the root project folder so it can locate the required data files (like the Wordle wordlist)!
+```bash
+cd ..
+./build/app
+```
