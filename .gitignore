@@ -1,2 +1,24 @@
+# Compiled binaries
 *.out
 *.exe
+*.o
+*.a
+*.so
+*.dylib
+
+# Build directory
+build/
+
+# IDE / Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# CMake
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+Makefile

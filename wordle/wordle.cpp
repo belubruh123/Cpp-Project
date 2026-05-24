@@ -1,13 +1,19 @@
-#include <bits/stdc++.h>
+#include <iostream>
+#include <vector>
+#include <string>
+#include <fstream>
+#include <random>
+#include <algorithm>
+#include "wordle.hpp"
 
 using namespace std;
 
 // 宣告全域變數
-inline vector<string> validGuesses;
-inline vector<string> answers;
+vector<string> validGuesses;
+vector<string> answers;
 
 // 1. 載入資料庫
-inline void loadData(){
+void loadData(){
     validGuesses.clear();
     answers.clear();
     
@@ -29,7 +35,7 @@ inline void loadData(){
 }
 
 // 2. 選擇語言
-inline string selectLanguage(){
+string selectLanguage(){
     while(true){
         string s;
         cout << "Please select a language, English(e) or Chinese(c): ";
@@ -41,7 +47,7 @@ inline string selectLanguage(){
 }
 
 // 3. 提示系統
-inline int hints(string ans, int hint){
+int hints(string ans, int hint){
     if(hint <= 4){ 
         string s;
         cout << "Do you need a hint?(y/n): ";
@@ -55,7 +61,7 @@ inline int hints(string ans, int hint){
 }
 
 // 4. 取得隨機單字
-inline string getRandomWord() {
+string getRandomWord() {
     if (answers.empty()) return "";
     static random_device rd;
     static mt19937 gen(rd());
@@ -64,7 +70,7 @@ inline string getRandomWord() {
 }
 
 // 5. 遊戲說明畫面
-inline void intro(string s){
+void intro(string s){
     if(s == "e"){
         cout << R"(
           =============================================
@@ -89,7 +95,7 @@ inline void intro(string s){
 }
 
 // 6. 處理玩家輸入
-inline string input(int attempt){
+string input(int attempt){
     while(true){
         string s;
         cout << "Please answer your guess, you have " << attempt << " attempts left." << endl;
@@ -109,7 +115,7 @@ inline string input(int attempt){
 }
 
 // 7. 單局 Wordle 主核心
-inline void wordleF(){
+void wordleF(){
     string language = selectLanguage();
     loadData();
     
@@ -198,7 +204,7 @@ inline void wordleF(){
 }
 
 // 8. 重複遊玩外殼（供外部呼叫的公開介面）
-inline void wordle(){
+void wordle(){
     while(true){
         wordleF();
         cout << "Play Again?(y/n): ";

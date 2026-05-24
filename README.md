@@ -23,12 +23,15 @@
 ## Tutorial on how to build from source your self
 
 ***
-We actually setup most of the thing already but it can change as we code, but here is the current method. Which is basically running the build Python script and you are basically all set.
+We have transitioned to using CMake for building this project. Please ensure you have CMake installed.
  
- **Windows system:**
-> python build.py
-> 
-**Linux/MacOS:**
-> python3 build.py
+ **To compile from source (All Platforms):**
+> mkdir build
+> cd build
+> cmake ..
+> make
+
+Once compiled, you can run the application:
+> ./app
 
  

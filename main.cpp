@@ -1,8 +1,12 @@
-#include <bits/stdc++.h>
+#include <iostream>
+#include <vector>
+#include <string>
 #include <functional>
+#include <algorithm>
 #include "2048/2048.hpp"
-#include "NN/ai_tools.cpp"
-#include "wordle/wordle.cpp"
+#include "NN/ai_tools.hpp"
+#include "wordle/wordle.hpp"
+#include "backrooms/backrooms.hpp"
 
 #ifdef _WIN32
     #include <windows.h>
@@ -143,6 +147,11 @@ int main() {
     menu.addOption("神經網路模型訓練 ", []() {
         clearScreen();
         start_nn_demo();
+    });
+
+    menu.addOption("Backrooms", []() {
+        clearScreen();
+        start_backrooms();
     });
 
     menu.addOption("關閉系統並退出", []() {
