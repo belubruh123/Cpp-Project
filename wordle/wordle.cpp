@@ -17,7 +17,7 @@ void loadData(){
     validGuesses.clear();
     answers.clear();
     
-    ifstream file("validGuesses.txt");
+    ifstream file("wordle/validGuesses.txt");
     string temp;
     while(file >> temp){
         for(auto &c : temp) c = toupper(c);
@@ -25,7 +25,7 @@ void loadData(){
     }
     file.close();
     
-    ifstream file2("answers.txt");
+    ifstream file2("wordle/answers.txt");
     while(file2 >> temp){
         for(auto &c : temp) c = toupper(c);
         answers.push_back(temp);
