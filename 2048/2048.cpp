@@ -1,5 +1,12 @@
-#include <bits/stdc++.h>
-#include "../NN/ai_tools.cpp"
+#include <iostream>
+#include <vector>
+#include <string>
+#include <random>
+#include <thread>
+#include <chrono>
+#include <algorithm>
+#include <cmath>
+#include "../NN/ai_tools.hpp"
 using namespace std;
 #define CLEAR_SCREEN cout << "\033[2J\033[1;1H";
 #define DARK_TXT "\033[38;2;119;110;101m" // Only 2 and 4
