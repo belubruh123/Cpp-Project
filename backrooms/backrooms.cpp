@@ -44,10 +44,10 @@ void main() {
     float distance = length(viewPos - fragPosition);
     
     // Extreme dark ambient with some randomly placed lights
-    float ambient = 0.01;
-    float spotLightEffect = (sin(fragPosition.x * 0.8) + cos(fragPosition.z * 0.8)) * 0.5;
-    spotLightEffect = smoothstep(0.7, 1.0, spotLightEffect); // Only illuminate some peaks
-    ambient += spotLightEffect * 0.6; // Add light blobs
+    float ambient = 0.002; // Super dark baseline
+    float spotLightEffect = sin(fragPosition.x * 0.5) + cos(fragPosition.z * 0.5);
+    float brightPart = smoothstep(1.0, 2.0, spotLightEffect) * 1.2; // Brighter peaks
+    ambient += brightPart; // Add light blobs
     
     float diffuse = 0.0;
     if (flashlightOn == 1) {
@@ -82,12 +82,40 @@ bool CheckMeshCollision(Vector3 oldPos, Vector3 newPos, Model& model, float radi
 }
 
 void start_backrooms() {
-    InitWindow(1024, 768, "Backrooms - 3D GLB Model");
+    SetConfigFlags(FLAG_WINDOW_UNDECORATED | FLAG_WINDOW_TOPMOST);
+    InitWindow(0, 0, "Backrooms");
+    int monitor = GetCurrentMonitor();
+    SetWindowSize(GetMonitorWidth(monitor), GetMonitorHeight(monitor));
+    SetWindowPosition(0, 0);
+    InitAudioDevice();
     SetTargetFPS(60);
     DisableCursor();
 
     // Load the external model file relative to the build directory
     Model model = LoadModel("../backrooms/backrooms_with_baked_textures.glb");
+
+    Music noise = LoadMusicStream("../backrooms/noise.wav");
+    noise.looping = true;
+    SetMusicVolume(noise, 0.8f); // Increased from 0.4f to 0.8f
+    PlayMusicStream(noise);
+    
+    Sound footstep = LoadSound("../backrooms/footstep.mp3");
+    SetSoundVolume(footstep, 4.5f); // 10% lower than 5.0f
+    
+    Sound whisper = LoadSound("../backrooms/whisper.mp3");
+    SetSoundVolume(whisper, 1.5f);
+    float whisperTimer = GetRandomValue(30, 90);
+
+    Music a4_music = LoadMusicStream("../backrooms/A4 - Childishly fresh eyes.mp3");
+    SetMusicVolume(a4_music, 0.675f); // 25% lower than 0.9f
+    PlayMusicStream(a4_music);
+    PauseMusicStream(a4_music);
+    int a4_state = 0; // 0 = waiting, 1 = playing
+    float a4_timer = GetRandomValue(60, 120); // wait 1-2 minutes before playing
+
+    Texture2D smiler1 = LoadTexture("../backrooms/smiler1.png");
+    Texture2D smiler2 = LoadTexture("../backrooms/smiler2.png");
+    Texture2D activeSmilerTex = smiler1;
     
     Shader shader = LoadShaderFromMemory(vsCode, fsCode);
     int viewPosLoc = GetShaderLocation(shader, "viewPos");
@@ -112,8 +140,37 @@ void start_backrooms() {
     Vector2 vel = {0, 0};
     float bobTime = 0.0f;
     int flashlightOn = 1;
+    bool footstepPlayed = false;
+    
+    Vector3 smilerPos = { -1000.0f, 1.0f, -1000.0f };
+    bool smilerActive = false;
+    float smilerTimer = 0.0f;
 
     while (!WindowShouldClose()) {
+        UpdateMusicStream(noise);
+        UpdateMusicStream(a4_music);
+
+        // Whisper logic
+        whisperTimer -= GetFrameTime();
+        if (whisperTimer <= 0.0f) {
+            PlaySound(whisper);
+            whisperTimer = GetRandomValue(30, 90);
+        }
+
+        // A4 Music Logic
+        a4_timer -= GetFrameTime();
+        if (a4_timer <= 0.0f) {
+            if (a4_state == 0) {
+                a4_state = 1;
+                a4_timer = GetRandomValue(30, 67);
+                ResumeMusicStream(a4_music);
+            } else {
+                a4_state = 0;
+                a4_timer = GetRandomValue(60, 120);
+                PauseMusicStream(a4_music);
+            }
+        }
+
         if (IsKeyPressed(KEY_F)) flashlightOn = !flashlightOn;
         if (IsKeyPressed(KEY_ESCAPE)) break;
 
@@ -162,8 +219,48 @@ void start_backrooms() {
 
         float speed = sqrtf(vel.x*vel.x + vel.y*vel.y);
         if (speed > 0.01f) {
-            bobTime += speed * 6.0f; // Lower frequency
+            bobTime += speed * 4.0f; // Lower frequency
         }
+        
+        if (sinf(bobTime) < -0.9f) {
+            if (!footstepPlayed) {
+                PlaySound(footstep);
+                footstepPlayed = true;
+            }
+        } else if (sinf(bobTime) > 0.0f) {
+            footstepPlayed = false;
+        }
+
+        // Smiler logic
+        if (!smilerActive) {
+            smilerTimer += GetFrameTime();
+            if (smilerTimer > 2.0f) { // Try to spawn frequently if not active
+                smilerTimer = 0.0f;
+                float angle = GetRandomValue(0, 360) * DEG2RAD;
+                float dist = GetRandomValue(7, 12);
+                Vector3 candidatePos = { camera.position.x + cosf(angle)*dist, 1.0f, camera.position.z + sinf(angle)*dist };
+                
+                float spotLightEffect = sinf(candidatePos.x * 0.5f) + cosf(candidatePos.z * 0.5f);
+                if (spotLightEffect < 0.5f) { // Dark spot
+                    if (!CheckMeshCollision(camera.position, candidatePos, model, 0.1f)) {
+                        smilerPos = candidatePos;
+                        smilerActive = true;
+                        activeSmilerTex = GetRandomValue(0, 1) == 0 ? smiler1 : smiler2;
+                    }
+                }
+            }
+        } else {
+            float distToSmiler = Vector3Distance(camera.position, smilerPos);
+            Vector3 dirToSmiler = Vector3Normalize(Vector3Subtract(smilerPos, camera.position));
+            float theta = Vector3DotProduct(forward, dirToSmiler);
+            
+            if (distToSmiler < 6.0f) {
+                smilerActive = false; // Too close
+            } else if (flashlightOn == 1 && theta > 0.85f) {
+                smilerActive = false; // Pointed flashlight at it
+            }
+        }
+
         camera.position.y = 0.4f + sinf(bobTime) * 0.04f; // Lower base height and amplitude
         camera.target = (Vector3){ camera.position.x + forward.x, camera.position.y + forward.y, camera.position.z + forward.z };
 
@@ -179,6 +276,10 @@ void start_backrooms() {
                 
                 // Draw the GLB model using standard 3D logic
                 DrawModel(model, (Vector3){0.0f, 0.0f, 0.0f}, 1.0f, WHITE);
+                
+                if (smilerActive) {
+                    DrawBillboard(camera, activeSmilerTex, smilerPos, 2.0f, WHITE);
+                }
 
             EndMode3D();
             
@@ -191,6 +292,13 @@ void start_backrooms() {
     }
     
     EnableCursor();
+    UnloadTexture(smiler1);
+    UnloadTexture(smiler2);
+    UnloadSound(footstep);
+    UnloadSound(whisper);
+    UnloadMusicStream(a4_music);
+    UnloadMusicStream(noise);
+    CloseAudioDevice();
     UnloadShader(shader);
     UnloadModel(model);
     CloseWindow();
