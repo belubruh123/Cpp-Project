@@ -44,7 +44,7 @@ void main() {
     float distance = length(viewPos - fragPosition);
     
     // Extreme dark ambient with some randomly placed lights
-    float ambient = 0.002; // Super dark baseline
+    float ambient = 0.025; // Brighter baseline
     float spotLightEffect = sin(fragPosition.x * 0.5) + cos(fragPosition.z * 0.5);
     float brightPart = smoothstep(1.0, 2.0, spotLightEffect) * 1.2; // Brighter peaks
     ambient += brightPart; // Add light blobs
@@ -52,10 +52,10 @@ void main() {
     float diffuse = 0.0;
     if (flashlightOn == 1) {
         float theta = dot(lightDir, normalize(-spotlightDir));
-        if (theta > 0.85) { // Cutoff angle for flashlight
-            float intensity = smoothstep(0.85, 0.95, theta);
-            float attenuation = 1.0 / (1.0 + 0.1 * distance + 0.02 * distance * distance);
-            diffuse = max(dot(fragNormal, lightDir), 0.0) * intensity * attenuation * 3.0;
+        if (theta > 0.75) { // Cutoff angle for flashlight
+            float intensity = smoothstep(0.75, 0.85, theta);
+            float attenuation = 1.0 / (1.0 + 0.05 * distance + 0.008 * distance * distance);
+            diffuse = max(dot(fragNormal, lightDir), 0.0) * intensity * attenuation * 4.5;
         }
     }
     
@@ -82,11 +82,9 @@ bool CheckMeshCollision(Vector3 oldPos, Vector3 newPos, Model& model, float radi
 }
 
 void start_backrooms() {
-    SetConfigFlags(FLAG_WINDOW_UNDECORATED | FLAG_WINDOW_TOPMOST);
-    InitWindow(0, 0, "Backrooms");
-    int monitor = GetCurrentMonitor();
-    SetWindowSize(GetMonitorWidth(monitor), GetMonitorHeight(monitor));
-    SetWindowPosition(0, 0);
+    SetConfigFlags(FLAG_WINDOW_RESIZABLE);
+    InitWindow(1280, 720, "Backrooms");
+    SetWindowState(FLAG_WINDOW_MAXIMIZED);
     InitAudioDevice();
     SetTargetFPS(60);
     DisableCursor();
@@ -96,7 +94,7 @@ void start_backrooms() {
 
     Music noise = LoadMusicStream("../backrooms/noise.wav");
     noise.looping = true;
-    SetMusicVolume(noise, 0.8f); // Increased from 0.4f to 0.8f
+    SetMusicVolume(noise, 5.0f); // Increased volume to make it audible
     PlayMusicStream(noise);
     
     Sound footstep = LoadSound("../backrooms/footstep.mp3");
@@ -147,6 +145,7 @@ void start_backrooms() {
     float smilerTimer = 0.0f;
 
     while (!WindowShouldClose()) {
+        if (!IsMusicStreamPlaying(noise)) PlayMusicStream(noise);
         UpdateMusicStream(noise);
         UpdateMusicStream(a4_music);
 
@@ -233,19 +232,18 @@ void start_backrooms() {
 
         // Smiler logic
         if (!smilerActive) {
-            smilerTimer += GetFrameTime();
-            if (smilerTimer > 2.0f) { // Try to spawn frequently if not active
-                smilerTimer = 0.0f;
+            for (int i = 0; i < 10; i++) {
                 float angle = GetRandomValue(0, 360) * DEG2RAD;
-                float dist = GetRandomValue(7, 12);
+                float dist = GetRandomValue(7, 12); // Reverted back to 7-12
                 Vector3 candidatePos = { camera.position.x + cosf(angle)*dist, 1.0f, camera.position.z + sinf(angle)*dist };
                 
                 float spotLightEffect = sinf(candidatePos.x * 0.5f) + cosf(candidatePos.z * 0.5f);
-                if (spotLightEffect < 0.5f) { // Dark spot
+                if (spotLightEffect < 0.6f) { // Dark spot (loosened slightly)
                     if (!CheckMeshCollision(camera.position, candidatePos, model, 0.1f)) {
                         smilerPos = candidatePos;
                         smilerActive = true;
                         activeSmilerTex = GetRandomValue(0, 1) == 0 ? smiler1 : smiler2;
+                        break;
                     }
                 }
             }
@@ -254,9 +252,9 @@ void start_backrooms() {
             Vector3 dirToSmiler = Vector3Normalize(Vector3Subtract(smilerPos, camera.position));
             float theta = Vector3DotProduct(forward, dirToSmiler);
             
-            if (distToSmiler < 6.0f) {
+            if (distToSmiler < 3.0f) {
                 smilerActive = false; // Too close
-            } else if (flashlightOn == 1 && theta > 0.85f) {
+            } else if (flashlightOn == 1 && theta > 0.75f) {
                 smilerActive = false; // Pointed flashlight at it
             }
         }
