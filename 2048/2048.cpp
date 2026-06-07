@@ -14,7 +14,7 @@ using namespace std;
 #define RESET "\033[0m"
 
 #ifdef _WIN32
-    #include <conio.h>
+#include <conio.h>
 #endif
 
 extern int getch(); // Too lazy to make a header for main.cpp
@@ -284,8 +284,7 @@ void play2048()
     spawn();
     int mode = 2;
     cout << "\n";
-    cout << "Welcome to 2048! Enter 1 for AI training mode, 0 for human playing mode!" << endl;
-    cout << "Your choice: ";
+    cout << "歡迎來到2048! 請輸入你要玩的模式(0 = 玩家模式，1 = AI模式): ";
     while (mode > 1)
     {
         cin >> mode;
@@ -332,26 +331,31 @@ void play2048()
     else
     {
         CLEAR_SCREEN
-        cout << "\nLooks like you want to train AI! Enter the rounds it should play: ";
+        cout << "\n歡迎來到AI模式! 請輸入AI玩的次數: ";
         int rounds = 0;
         cin >> rounds;
         // We are going to make 4 NN each with 2 hidden layer and 1 final output layer
-        int gamma = 0.95;
+        float gamma = 0.99;
         /*Design: 256 input 16x16 each of the first 16 is paired with log2 of the tile index as 1
             and then after that first layer is going to be 512 neuron each with 256 input
-            then after that we have 256 neuron with 512 input and finally layer with 4 neuron 256 input 
+            then after that we have 256 neuron with 512 input and finally layer with 4 neuron 256 input
         */
-        vector<neuron> h1(512,neuron(256,0.001f));
-        vector<neuron> h2(256,neuron(512,0.001f));
-        vector<neuron> finale(4,neuron(256,0.001f));
+        vector<neuron> h1(512, neuron(256, 0.001f));
+        vector<neuron> h2(256, neuron(512, 0.001f));
+        vector<neuron> finale(4, neuron(256, 0.001f));
+
+        int max_score = 0;
 
         for (int i = 0; i < rounds; i++)
         {
+            init();
+            spawn();
             int choice = 0;
             int total_score = 0;
             bool first = true;
             float reward = 0;
             bool stuck = false;
+            int alread = 0;
             current_free = 16;
             maxTile = 2;
             while (true)
@@ -363,115 +367,161 @@ void play2048()
                     delay(1000);
                     cout << "輸了！" << "\n";
                     delay(1000);
-                    init();
-                    spawn();
+                    max_score = max(total_score, max_score);
+                    break;
                 }
-                vector<float> input(256,0);
-                for (int i = 0; i<4; i++) {
-                    for (int j = 0; j<4; j++) {
+                vector<float> input(256, 0);
+                for (int i = 0; i < 4; i++)
+                {
+                    for (int j = 0; j < 4; j++)
+                    {
                         int index = 0;
-                        if (board[i][j]) {
+                        if (board[i][j])
+                        {
                             index = log2(board[i][j]);
                         }
                         input[(i * 4 + j) * 16 + index] = 1;
                     }
-
                 }
-                vector<float>h1_out(512);
-                for (int i = 0; i<512; i++) {
+                vector<float> h1_out(512);
+                for (int i = 0; i < 512; i++)
+                {
                     h1[i].setInput(input);
                     h1_out[i] = h1[i].y_hat(true);
                 }
-                vector<float>h2_out(256);
-                for (int i = 0; i<256; i++) {
+                vector<float> h2_out(256);
+                for (int i = 0; i < 256; i++)
+                {
                     h2[i].setInput(h1_out);
                     h2_out[i] = h2[i].y_hat(true);
                 }
-                vector<float>q_out(4);
-                for (int i = 0; i<4; i++) {
+                vector<float> q_out(4);
+                for (int i = 0; i < 4; i++)
+                {
                     finale[i].setInput(h2_out);
-                    q_out[i]=finale[i].y_hat(false);
+                    q_out[i] = finale[i].y_hat(false);
                 }
                 int before[4][4];
                 copy(&board[0][0], &board[0][0] + 16, &before[0][0]);
-                if (stuck || randint(1, 100) <= 10) { 
+                if (stuck || randint(1, 100) <= 10)
+                {
                     choice = randint(0, 3); // Force a random move to break the freeze
-                } else {
+                }
+                else
+                {
                     choice = distance(q_out.begin(), max_element(q_out.begin(), q_out.end()));
                 }
-                if (choice == 0) {
+                if (choice == 0)
+                {
                     up();
-                } else if (choice == 1) {
+                }
+                else if (choice == 1)
+                {
                     down();
-                } else if (choice == 2) {
+                }
+                else if (choice == 2)
+                {
                     left();
-                } else if (choice == 3) {
+                }
+                else if (choice == 3)
+                {
                     right();
+                }
+                // reward = (!get_score ? 25 - alread * 0.5 : reward + get_score);
+                if (!get_score)
+                {
+                    reward = 25 - alread * 0.5;
+                    alread += 1;
+                }
+                else
+                {
+                    reward = reward + get_score;
+                    alread = 0;
+                }
+                if (board[0][0] == maxTile)
+                {
+                    reward += 50 * (0.25 * total_score + maxTile * 2 * 0.67);
+                }
+                else
+                {
+                    reward -= 0.25 * total_score + maxTile * 2 * 0.67;
                 }
                 if (isDead())
                 {
                     reward = -999;
                 }
-                reward = (!get_score ? -1 : reward + get_score);
                 if (!equal(&board[0][0], &board[0][0] + 16, &before[0][0]))
                 {
                     spawn();
-                    stuck = false; 
-                } else {
+                    stuck = false;
+                }
+                else
+                {
                     reward = -100;
                     stuck = true;
                 }
                 total_score += get_score;
-                cout << "\n Score:" << total_score << endl;
+                cout << "\n 分數:" << total_score << " 最高分:" << max_score << endl;
                 get_score = 0;
-                //This is not a duplicate! I am making the training here!
-                vector<float> inputp(256,0);
-                for (int i = 0; i<4; i++) {
-                    for (int j = 0; j<4; j++) {
+                // This is not a duplicate! I am making the training here!
+                vector<float> inputp(256, 0);
+                for (int i = 0; i < 4; i++)
+                {
+                    for (int j = 0; j < 4; j++)
+                    {
                         int index = 0;
-                        if (board[i][j]) {
+                        if (board[i][j])
+                        {
                             index = log2(board[i][j]);
                         }
                         inputp[(i * 4 + j) * 16 + index] = 1;
                     }
-
                 }
-                vector<float>h1_outp(512);
-                for (int i = 0; i<512; i++) {
+                vector<float> h1_outp(512);
+                for (int i = 0; i < 512; i++)
+                {
                     h1[i].setInput(inputp);
                     h1_outp[i] = h1[i].y_hat(true);
                 }
-                vector<float>h2_outp(256);
-                for (int i = 0; i<256; i++) {
+                vector<float> h2_outp(256);
+                for (int i = 0; i < 256; i++)
+                {
                     h2[i].setInput(h1_outp);
                     h2_outp[i] = h2[i].y_hat(true);
                 }
-                vector<float>q_outp(4);
-                for (int i = 0; i<4; i++) {
+                vector<float> q_outp(4);
+                for (int i = 0; i < 4; i++)
+                {
                     finale[i].setInput(h2_outp);
-                    q_outp[i]=finale[i].y_hat(false);
+                    q_outp[i] = finale[i].y_hat(false);
                 }
                 float target = (float)reward + (gamma * (*max_element(q_outp.begin(), q_outp.end())));
-                
+
                 float grad_finale = (q_out[choice] - target) * 2;
                 finale[choice].train(grad_finale);
 
                 vector<float> finale_weights = finale[choice].get_weight();
                 vector<float> grad_h2(256, 0.0f);
 
-                for (int j = 0; j < 256; j++) {
-                    if (h2_out[j] > 0) {
+                for (int j = 0; j < 256; j++)
+                {
+                    if (h2_out[j] > 0)
+                    {
                         grad_h2[j] = grad_finale * finale_weights[j];
                         h2[j].setInput(h1_out);
                         h2[j].train(grad_h2[j]);
                     }
                 }
 
-                for (int i = 0; i < 512; i++) {
-                    if (h1_out[i] > 0) {
+                for (int i = 0; i < 512; i++)
+                {
+                    if (h1_out[i] > 0)
+                    {
                         float grad_h1_i = 0.0f;
-                        for (int j = 0; j < 256; j++) {
-                            if (h2_out[j] > 0) {
+                        for (int j = 0; j < 256; j++)
+                        {
+                            if (h2_out[j] > 0)
+                            {
                                 vector<float> h2_weights = h2[j].get_weight();
                                 grad_h1_i += grad_h2[j] * h2_weights[i];
                             }

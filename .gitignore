@@ -1,24 +1,35 @@
-# Compiled binaries
-*.out
-*.exe
+# CMake and build directories
+build/
+out/
+bin/
+
+# Object files and libraries
 *.o
+*.obj
 *.a
+*.lib
 *.so
+*.dll
 *.dylib
 
-# Build directory
-build/
+# Executables
+*.exe
+*.out
+*.app
 
-# IDE / Editor
+# IDE and OS files
 .vscode/
+.vs/
 .idea/
-*.swp
-*.swo
-*~
 .DS_Store
+Thumbs.db
 
-# CMake
+# CMake generated files (if accidentally generated in source)
 CMakeCache.txt
 CMakeFiles/
-cmake_install.cmake
 Makefile
+cmake_install.cmake
+
+# Backup and temp files
+*.bak
+*.swp
